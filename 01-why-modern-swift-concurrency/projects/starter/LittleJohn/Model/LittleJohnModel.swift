@@ -60,6 +60,7 @@ class LittleJohnModel: ObservableObject {
       tickerSymbols = sortedSymbols
       print("Updated: \(Date())")
     }
+    tickerSymbols = []
   }
 
   /// A URL session that lets requests run indefinitely so we can receive live updates from server.
