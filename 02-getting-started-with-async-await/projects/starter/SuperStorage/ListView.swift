@@ -93,6 +93,7 @@ struct ListView: View {
 
         do {
           files = try await model.availableFiles()
+          status = try await model.status()
         } catch {
           lastErrorMessage = error.localizedDescription
         }

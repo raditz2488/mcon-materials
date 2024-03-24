@@ -98,6 +98,23 @@ class SuperStorageModel: ObservableObject {
 
     return list
   }
+
+  func status() async throws -> String {
+    guard let url = URL(string: "http://localhost:8080/files/status") else {
+      throw "Could not create the url."
+    }
+
+    let (data, response) = try await URLSession.shared.data(from: url)
+
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+      throw "The server responded with an error."
+    }
+
+    guard let result = String(data: data, encoding: .utf8) else {
+      throw "Could not parse the response."
+    }
+    return result
+  }
 }
 
 extension SuperStorageModel {
