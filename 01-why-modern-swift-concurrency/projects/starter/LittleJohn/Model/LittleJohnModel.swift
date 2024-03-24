@@ -36,6 +36,7 @@ import Foundation
 extension String: Error { }
 
 /// The app model that communicates with the server.
+@MainActor
 class LittleJohnModel: ObservableObject {
   /// Current live updates.
   @Published private(set) var tickerSymbols: [Stock] = []
@@ -44,6 +45,20 @@ class LittleJohnModel: ObservableObject {
   func startTicker(_ selectedSymbols: [String]) async throws {
     guard let url = URL(string: "http://localhost:8080/littlejohn/ticker?\(selectedSymbols.joined(separator: ","))") else {
       throw "The URL could not be created."
+    }
+  
+    let (stream, response) = try await liveURLSession.bytes(from: url)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+      throw "The server responded with an error"
+    }
+
+    for try await line in stream.lines {
+      let sortedSymbols = try JSONDecoder()
+        .decode([Stock].self, from: Data(line.utf8))
+        .sorted(by: { $0.name < $1.name })
+
+      tickerSymbols = sortedSymbols
+      print("Updated: \(Date())")
     }
   }
 
