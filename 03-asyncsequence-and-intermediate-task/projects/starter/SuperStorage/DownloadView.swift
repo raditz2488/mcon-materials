@@ -101,6 +101,18 @@ struct DownloadView: View {
         },
         downloadMultipleAction: {
           // Download a file in multiple concurrent parts.
+          isDownloadActive = true
+          Task {
+            do {
+              try await SuperStorageModel
+                .$supportsPartialDownloads
+                .withValue(file.name.hasSuffix(".jpeg")) {
+                  fileData = try await model.multiDownloadWithProgress(file: file)
+                }
+            } catch {}
+            isDownloadActive = false
+          }
+          
         }
       )
       if !model.downloads.isEmpty {
