@@ -54,6 +54,28 @@ class BlabberModel: ObservableObject {
   /// Does a countdown and sends the message.
   func countdown(to message: String) async throws {
     guard !message.isEmpty else { return }
+    var countDown = 3
+    let counter = AsyncStream<String> {
+      guard countDown >= 0 else { return nil }
+      do {
+        try await Task.sleep(for: .seconds(1))
+      } catch {
+        return nil
+      }
+      defer {
+        countDown -= 1
+      }
+
+      if countDown == 0 {
+        return "🎉 " + message
+      } else {
+        return "\(countDown)..."
+      }
+    }
+
+    for await countdownMessage in counter {
+      try await say(countdownMessage)
+    }
   }
 
   /// Start live chat updates
