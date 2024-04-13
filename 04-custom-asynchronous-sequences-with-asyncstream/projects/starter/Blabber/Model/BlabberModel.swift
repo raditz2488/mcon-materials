@@ -122,11 +122,17 @@ class BlabberModel: ObservableObject {
       Message(message: "\(status.activeUsers) active users")
     )
 
+    let notifications = Task {
+      await observeAppStatus()
+    }
     for try await line in stream.lines {
       if let data = line.data(using: .utf8),
          let update = try? JSONDecoder().decode(Message.self, from: data) {
         messages.append(update)
       }
+    }
+    defer {
+      notifications.cancel()
     }
   }
 
@@ -155,4 +161,18 @@ class BlabberModel: ObservableObject {
     configuration.timeoutIntervalForRequest = .infinity
     return URLSession(configuration: configuration)
   }()
+
+  func observeAppStatus() async {
+    Task {
+      for await _ in NotificationCenter.default.notifications(for: UIApplication.willResignActiveNotification) {
+        try? await say("\(username) went away", isSystemMessage: true)
+      }
+    }
+
+    Task {
+      for await _ in NotificationCenter.default.notifications(for: UIApplication.didBecomeActiveNotification) {
+        try? await say("\(username) came back", isSystemMessage: true)
+      }
+    }
+  }
 }
