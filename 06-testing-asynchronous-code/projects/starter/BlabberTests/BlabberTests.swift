@@ -34,4 +34,14 @@ import XCTest
 @testable import Blabber
 
 class BlabberTests: XCTestCase {
+  @MainActor
+  let model = {
+    let model = BlabberModel()
+    model.username = "test"
+    let config = URLSessionConfiguration.default
+    config.protocolClasses = [TestURLProtocol.self]
+    let session = URLSession(configuration: config)
+    model.urlSession = session
+    return model
+  }()
 }
