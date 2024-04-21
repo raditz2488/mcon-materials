@@ -41,6 +41,9 @@ class BlabberModel: ObservableObject {
   var username = ""
   var urlSession = URLSession.shared
 
+  private let manager = CLLocationManager()
+  private var delegate: ChatLocationDelegate?
+
   nonisolated init() {
   }
 
@@ -49,6 +52,15 @@ class BlabberModel: ObservableObject {
 
   /// Shares the current user's address in chat.
   func shareLocation() async throws {
+    let location: CLLocation = try await withCheckedThrowingContinuation { [weak self] continuation in
+      self?.delegate = ChatLocationDelegate(manager: manager, continuation: continuation)
+      if manager.authorizationStatus == .authorizedWhenInUse {
+        manager.startUpdatingLocation()
+      }
+    }
+    print(location.description)
+    manager.stopUpdatingLocation()
+    delegate = nil
   }
 
   /// Does a countdown and sends the message.
