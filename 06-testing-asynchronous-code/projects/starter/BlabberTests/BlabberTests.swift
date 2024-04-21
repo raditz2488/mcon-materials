@@ -44,4 +44,13 @@ class BlabberTests: XCTestCase {
     model.urlSession = session
     return model
   }()
+
+  func testModelSay() async throws {
+    try await model.say("Hello!")
+    let request = try XCTUnwrap(TestURLProtocol.lastRequest)
+    XCTAssertEqual(request.url?.absoluteString, "http://localhost:8080/chat/say")
+    let httpBody = try XCTUnwrap(request.httpBody)
+    let message = try XCTUnwrap(try? JSONDecoder().decode(Message.self, from: httpBody))
+    XCTAssertEqual(message.message, "Hello!")
+  }
 }
