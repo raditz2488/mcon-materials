@@ -53,4 +53,8 @@ class BlabberTests: XCTestCase {
     let message = try XCTUnwrap(try? JSONDecoder().decode(Message.self, from: httpBody))
     XCTAssertEqual(message.message, "Hello!")
   }
+
+  func testModelCountDown() async throws {
+    
+  }
 }

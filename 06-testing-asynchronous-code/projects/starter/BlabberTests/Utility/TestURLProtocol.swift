@@ -34,7 +34,20 @@ import Foundation
 
 /// A catch-all URL protocol that returns successful response and records all requests.
 class TestURLProtocol: URLProtocol {
-  static var lastRequest: URLRequest?
+  static var lastRequest: URLRequest? {
+    didSet {
+      if let lastRequest {
+        continuation?.yield(lastRequest)
+      }
+    }
+  }
+
+  private static var continuation: AsyncStream<URLRequest>.Continuation?
+  static var requests: AsyncStream<URLRequest> = {
+    AsyncStream { continuation in
+      TestURLProtocol.continuation = continuation
+    }
+  }()
   override class func canInit(with request: URLRequest) -> Bool {
     return true
   }
@@ -50,10 +63,12 @@ class TestURLProtocol: URLProtocol {
       let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)
       else { fatalError("Client or URL missing") }
 
+    // The calls to the client are simulating the completion of response
     client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
     client.urlProtocol(self, didLoad: Data())
     client.urlProtocolDidFinishLoading(self)
 
+    // The code below captures the request for testing purpose
     guard let stream = request.httpBodyStream else {
       fatalError()
     }
