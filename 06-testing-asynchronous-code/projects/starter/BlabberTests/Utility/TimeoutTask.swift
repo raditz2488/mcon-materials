@@ -12,7 +12,7 @@ class TimeoutTask<Success> {
   let operation: @Sendable () async throws -> Success
   var continuation: CheckedContinuation<Success, Error>?
 
-  init(seconds: Int, operation: @escaping @Sendable () -> Success) {
+  init(seconds: Int, operation: @escaping @Sendable () async -> Success) {
     self.seconds = seconds
     self.operation = operation
   }

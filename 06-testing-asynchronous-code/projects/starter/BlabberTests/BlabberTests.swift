@@ -55,6 +55,41 @@ class BlabberTests: XCTestCase {
   }
 
   func testModelCountDown() async throws {
-    
+    // Three important things to note
+    // - (1/3)Two task run in parallel the model.countdown(to:) and the TimeoutTask
+    // - The TimeoutTask operation generates an array of String
+    //   (2/3)It limits the infinite stream of URLRequest to 4 by using prefix(4)
+    //   (3/3)The reduce method actually creates an iterator and generates the string array
+    // I have also created my version of reduce to demonstrate how the string value is generated in an extension of AsyncSequence below
+    async let countdown: Void = try await model.countdown(to: "Hello!")
+    async let messages: [String] = TimeoutTask(seconds: 10) {
+      // The await is for the request method which produces result asynchronously
+      await TestURLProtocol
+        .requests // requests is async stream of URLRequest
+        .prefix(4) // returns an AsyncPrefixSequence
+        .compactMap { $0.httpBody }// returns an AsyncCompactMapSequence
+        .compactMap { // return an AsyncCompactMapSequence
+          try? JSONDecoder()
+            .decode(Message.self, from: $0)
+            .message
+        }
+        .myReduce([]) { $0 + [$1] } // Reduce is where the iterator is created and iteration happens
+    }.value
+
+    let (messagesResult, _) = try await (messages, countdown)
+
+    XCTAssertEqual(["3...", "2...", "1...", "🎉 Hello!"], messagesResult)
+  }
+}
+
+
+extension AsyncSequence {
+  @inlinable public func myReduce<Result>(_ initialResult: Result, _ nextPartialResult: (_ partialResult: Result, Self.Element) async throws -> Result) async rethrows -> Result {
+    var result: Result = initialResult
+    var iterator = makeAsyncIterator()
+    while let element = try await iterator.next() {
+      result = try await nextPartialResult(result, element)
+    }
+    return result
   }
 }
