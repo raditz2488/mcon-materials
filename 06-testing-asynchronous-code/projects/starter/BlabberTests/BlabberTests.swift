@@ -42,6 +42,9 @@ class BlabberTests: XCTestCase {
     config.protocolClasses = [TestURLProtocol.self]
     let session = URLSession(configuration: config)
     model.urlSession = session
+    model.sleep = {
+      try await Task.sleep(for: .nanoseconds($0))
+    }
     return model
   }()
 
