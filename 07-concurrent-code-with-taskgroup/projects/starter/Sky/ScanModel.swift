@@ -60,6 +60,13 @@ class ScanModel: ObservableObject {
 
   func runAllTasks() async throws {
     started = Date()
+    await withTaskGroup(of: String.self) { [unowned self] group in
+      for number in 0..<total {
+        group.addTask {
+          await self.worker(number: number)
+        }
+      }
+    }
   }
 }
 
@@ -77,5 +84,17 @@ extension ScanModel {
   @MainActor
   private func onScheduled() {
     scheduled += 1
+  }
+
+  func worker(number: Int) async -> String {
+    // Update ui with number of scheduled task
+    await onScheduled()
+
+    let task = ScanTask(input: number)
+    let result = await task.run()
+
+    // Updated ui with number of completed tasks, scheduled tasks and the tasks per second
+    await onTaskCompleted()
+    return result
   }
 }
