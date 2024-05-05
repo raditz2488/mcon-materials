@@ -60,12 +60,12 @@ class ScanModel: ObservableObject {
 
   func runAllTasks() async throws {
     started = Date()
-    try await withThrowingTaskGroup(of: String.self) { [unowned self] group in
+    try await withThrowingTaskGroup(of: Result<String, Error>.self) { [unowned self] group in
       let batchSize = 4
 
       for index in 0..<batchSize {
         group.addTask {
-          try await self.worker(number: index)
+          await self.worker(number: index)
         }
       }
 
@@ -74,7 +74,7 @@ class ScanModel: ObservableObject {
         print("Completed: \(result)")
         if index < total {
           group.addTask { [index] in
-            try await self.worker(number: index)
+            await self.worker(number: index)
           }
           index += 1
         }
@@ -104,12 +104,17 @@ extension ScanModel {
     scheduled += 1
   }
 
-  func worker(number: Int) async throws -> String {
+  func worker(number: Int) async -> Result<String, Error> {
     // Update ui with number of scheduled task
     await onScheduled()
 
     let task = ScanTask(input: number)
-    let result = try await task.run()
+    let result: Result<String, Error>
+    do {
+      result = try .success(await task.run())
+    } catch {
+      result = .failure(error)
+    }
 
     // Updated ui with number of completed tasks, scheduled tasks and the tasks per second
     await onTaskCompleted()
